@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+{% extends 'main_app/base.html' %}
+{% load static %}
+{% block page_title %}{{ page_title }}{% endblock page_title %}
+{% block content %}
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lost and Found</title>
+    
+    <style>
+       @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap');
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background-color: #f4f7f9;
+    margin: 0;
+    padding: 0;
+}
+
+.container {
+    max-width: 1100px;
+    margin: 30px auto;
+    padding: 25px;
+    background: #ffffff;
+    border-radius: 15px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    animation: fadeIn 0.8s ease-in-out;
+}
+
+h2, h3 {
+    text-align: center;
+    color: #333;
+    font-weight: 600;
+}
+
+/* FLEXBOX CONTAINER */
+.flex-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 25px;
+}
+
+/* FORM SECTION */
+.form-container {
+    width: 100%;
+    max-width: 600px;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: 0.3s ease-in-out;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: #007bff;
+    outline: none;
+    box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
+}
+
+/* BUTTON STYLES */
+button {
+    width: 100%;
+    padding: 12px;
+    background: #007bff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    transition: all 0.3s ease-in-out;
+}
+
+button:hover {
+    background: #0056b3;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 91, 187, 0.3);
+}
+
+/* QR CODE BUTTON */
+#showQrButton {
+    width: 200px;
+    margin: 10px auto;
+    display: block;
+    background: #28a745;
+}
+
+#showQrButton:hover {
+    background: #218838;
+}
+
+/* QR CODE CONTAINER */
+#qrContainer {
+    display: none;
+    margin-top: 15px;
+    text-align: center;
+}
+
+.qr-code {
+    max-width: 220px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* ITEMS CONTAINER */
+.items-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+    gap: 20px;
+    width: 100%;
+    justify-content: center;
+    margin-top: 30px;
+    animation: fadeIn 1s ease-in-out;
+}
+
+/* CARD DESIGN */
+.card {
+    background: white;
+    padding: 18px;
+    border-radius: 12px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.1);
+    transition: transform 0.3s, box-shadow 0.3s;
+    max-width: 300px;
+    position: relative;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0px 6px 16px rgba(0, 0, 0, 0.2);
+}
+
+.card img {
+    width: 100%;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 10px;
+    transition: transform 0.3s ease-in-out;
+}
+
+.card img:hover {
+    transform: scale(1.05);
+}
+
+.card p {
+    margin: 10px 0;
+    font-size: 15px;
+    color: #444;
+}
+
+/* DELETE BUTTON */
+.delete-btn {
+    background: #dc3545;
+    position: absolute;
+    top: 10px;
+    right: 1px;
+}
+
+.delete-btn:hover {
+    background: #c82333;
+}
+
+/* RESPONSE BUTTON */
+.response-btn {
+    background: #28a745;
+    margin-top: 10px;
+}
+
+.response-btn:hover {
+    background: #218838;
+}
+
+/* POPUP MESSAGE BOX */
+.message-box {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0px 4px 12px rgba(0, 0, 0, 0.2);
+    width: 90%;
+    max-width: 400px;
+    z-index: 1000;
+}
+
+/* ANIMATIONS */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <h2>Lost and Found</h2>
+    <div class="flex-container">
+        <!-- Form Section -->
+        <div class="form-container">
+            <h3>Report Lost Item</h3>
+            <form method="POST" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="text" name="name" placeholder="Your Name" required>
+                <select name="course" required>
+                    <option value="">Select Course</option>
+                    {% for course in courses %}
+                    <option value="{{ course.id }}">{{ course.name }}</option>
+                    {% endfor %}
+                </select>
+                <select name="identity" required>
+                    <option value="">Select Identity</option>
+                    <option value="Student">Student</option>
+                    <option value="Staff">Staff</option>
+                </select>
+                <textarea name="description" placeholder="Describe the lost item" required></textarea>
+                <input type="file" name="image" accept="image/*" required>
+                <button type="submit">Submit</button>
+            </form>
+        </div>
+
+        <!-- Lost Items Section -->
+        <div class="items-container">
+            <h3>Lost Items</h3>
+            {% for item in lost_items %}
+            <div class="card">
+                {% if user.is_superuser %}
+                <form method="POST" action="{% url 'delete_item' item.id %}">
+                    {% csrf_token %}
+                    <button type="submit" class="delete-btn">Delete</button>
+                </form>
+                {% endif %}
+                
+                <img src="{{ item.image.url }}" alt="Lost Item">
+                <p><strong>{{ item.name }}</strong> ({{ item.identity }})</p>
+                <p><strong>Course:</strong> {{ item.course.name }}</p>
+                <p><strong id="desc-{{ item.id }}">{{ item.description }}</strong></p>
+                <p><small>Reported on: {{ item.created_at }}</small></p>
+
+                <button class="response-btn" onclick="openResponseBox({{ item.id }})">Respond</button>
+            </div>
+            {% empty %}
+            <p style="text-align: center;">No lost items reported yet.</p>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<!-- Response Message Box -->
+<div id="messageBox" class="message-box">
+    <textarea id="responseText"></textarea>
+    <button onclick="updateDescription()">Submit</button>
+</div>
+
+<script>
+    let currentItemId = null;
+
+function openResponseBox(itemId) {
+    currentItemId = itemId;
+    document.getElementById("messageBox").style.display = "block";
+    document.getElementById("responseText").value = ""; // Clear previous response
+}
+
+function updateDescription() {
+    let newText = document.getElementById('responseText').value;
+
+    if (currentItemId && newText.trim() !== "") {
+        fetch("{% url 'update_description' %}", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/x-www-form-urlencoded",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: new URLSearchParams({
+                "item_id": currentItemId,
+                "new_description": newText
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                document.getElementById('desc-' + currentItemId).innerText = data.new_description;
+                document.getElementById('messageBox').style.display = 'none';
+            } else {
+                alert("Failed to update description!");
+            }
+        });
+    }
+}
+
+    
+</script>
+
+{% endblock content %}
+</body>
+</html>

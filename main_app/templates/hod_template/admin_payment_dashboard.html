@@ -1,0 +1,86 @@
+{% extends 'main_app/base.html' %}
+{% block content %}
+<div class="container mt-4">
+    <h2 class="mb-4">Student Payments</h2>
+
+    <!-- Search bar -->
+    <input type="text" id="searchInput" class="form-control mb-3" placeholder="Search for students, courses, or transactions...">
+
+    <table class="table table-bordered" id="paymentTable">
+        <thead class="thead-dark">
+            <tr>
+                <th>Student Name</th>
+                <th onclick="sortTable(1)">Course <span id="sortCourse" class="sort-icon">🔽</span></th>
+                <th>Transaction ID</th>
+                <th onclick="sortTable(3)">Amount <span id="sortAmount" class="sort-icon">🔽</span></th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for payment in payments %}
+            <tr>
+                <td>{{ payment.student.student.admin.last_name }}, {{ payment.student.student.admin.first_name }}</td>
+                <td>{{ payment.course.name }}</td>
+                <td>{{ payment.transaction_id }}</td>
+                <td>{{ payment.amount }}</td>
+                <td>{{ payment.date }}</td>
+            </tr>
+            {% empty %}
+            <tr>
+                <td colspan="6" class="text-center">No payments found</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<!-- JavaScript for Sorting and Searching -->
+<script>
+    // Search Functionality
+    document.getElementById("searchInput").addEventListener("keyup", function () {
+        let searchValue = this.value.toLowerCase();
+        let rows = document.querySelectorAll("#paymentTable tbody tr");
+
+        rows.forEach(row => {
+            let text = row.textContent.toLowerCase();
+            row.style.display = text.includes(searchValue) ? "" : "none";
+        });
+    });
+
+    // Sorting Function
+    function sortTable(colIndex) {
+        let table = document.getElementById("paymentTable");
+        let rows = Array.from(table.rows).slice(1); // Exclude the header
+        let ascending = table.getAttribute("data-sort") === "asc";
+
+        rows.sort((rowA, rowB) => {
+            let cellA = rowA.cells[colIndex].textContent.trim();
+            let cellB = rowB.cells[colIndex].textContent.trim();
+
+            if (!isNaN(cellA) && !isNaN(cellB)) { // Sort numerically if applicable
+                return ascending ? cellA - cellB : cellB - cellA;
+            }
+            return ascending ? cellA.localeCompare(cellB) : cellB.localeCompare(cellA);
+        });
+
+        // Toggle sort direction
+        table.setAttribute("data-sort", ascending ? "desc" : "asc");
+
+        // Update table rows
+        let tbody = table.querySelector("tbody");
+        tbody.innerHTML = "";
+        rows.forEach(row => tbody.appendChild(row));
+
+        // Update sort icon
+        document.getElementById(colIndex === 1 ? "sortCourse" : "sortAmount").textContent = ascending ? "🔼" : "🔽";
+    }
+</script>
+
+<style>
+    .sort-icon {
+        cursor: pointer;
+        margin-left: 5px;
+    }
+</style>
+
+{% endblock %}

@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Payment</title>
+    <style>
+         body  {
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            text-align: center;
+            padding: 20px;
+        } 
+        .container {
+            max-width: 500px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            margin: auto;
+        }
+        .qr-code {
+            width: 100%;
+            max-width: 250px;
+            margin: 20px auto;
+            text-align: center;
+        }
+        .instructions {
+            font-size: 16px;
+            margin-top: 10px;
+            color: #333;
+        }
+        .form-group {
+            margin-top: 15px;
+            text-align: left;
+        }
+        input, button {
+            width: 100%;
+            padding: 10px;
+            margin-top: 5px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            background-color: #28a745;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #218838;
+        }
+
+        #leftButton {
+            position: fixed;
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            box-shadow: 2px 2px 10px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.3s, transform 0.2s;
+            width: 200px;
+        }
+        
+        #leftButton:hover {
+            background-color: #0056b3;
+            transform: translateY(-50%) scale(1.1);
+        }
+        
+    </style>
+</head>
+
+<body>
+   <a href="{% url 'student_home' %}"> <button id="leftButton">Home</button></a>
+
+<div class="container">
+    <h2>Pay Your Fees</h2>
+
+    <!-- Student Details -->
+    <p><strong>Student Name:</strong> {{ student.admin.first_name }} {{ student.admin.last_name }}</p>
+    <p><strong>Course:</strong> {{ course.name }}</p>
+
+
+    <!-- QR Code -->
+    <!-- <button type="button" id="showQrButton">Generate QR Code</button> -->
+
+    <!-- <p class="instructions">Scan the QR code below using your UPI app to complete the payment.</p>
+    <img src="/media/QrCode.jpeg" alt="QR Code" class="qr-code" id="qrCode" style="display : none;">
+    <div id="qrContainer"></div> -->
+
+    <!-- Razorpay Payment Button -->
+    <button id="rzp-button1">Pay Now</button>
+
+    <!-- Transaction Submission Form -->
+    <form method="POST">
+        {% csrf_token %}
+        <div class="form-group">
+            <label>Transaction ID:</label>
+            <input type="text" name="transaction_id" placeholder="Enter transaction ID" required>
+        </div>
+        <div class="form-group">
+            <label>Amount (INR):</label>
+            <input type="number" step="0.01" name="amount" placeholder="Enter amount" required>
+        </div>
+        <button type="submit">Submit Record</button>
+    </form>
+
+</div>
+<!-- 
+ -->
+
+<script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+
+<script>
+    // document.getElementById("leftButton").addEventListener("click", function() {
+    //     this.style.transform = "translateY(-50%) scale(1.2)";
+    //     setTimeout(() => {
+    //         this.style.transform = "translateY(-50%) scale(1)";
+    //     }, 200);
+    // });
+
+    // document.getElementById("showQrButton").addEventListener("click", function() {
+    //     var qrContainer = document.getElementById("qrContainer");
+    //     var qrImage = document.getElementById("qrCode");
+    
+    //     if (qrImage.style.display === "block") {
+    //         qrImage.style.display = "none";
+    //         return;
+    //     }
+    
+    //     qrContainer.innerHTML = "<p>Generating QR Code...</p>";
+    
+    //     setTimeout(() => {
+    //         qrContainer.innerHTML = `<img src="/media/QrCode.jpeg" alt="QR Code" class="qr-code" id="qrCode">`;
+    //     }, 2000);
+    // });
+
+    async function createOrder() {
+    try {
+        let response = await fetch("/create_order/", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "X-CSRFToken": "{{ csrf_token }}"
+            },
+            body: JSON.stringify({ amount: 50000 })  // Send JSON
+        });
+
+        let data = await response.json();
+        console.log("Order Response:", data);  // Debugging
+
+        if (data.order_id) {
+            return data.order_id;
+        } else {
+            console.error("Error: Order ID not received", data);
+            alert("Failed to create order. Please try again.");
+            return null;
+        }
+    } catch (error) {
+        console.error("Fetch Error:", error);
+        alert("Network error. Please check your connection.");
+        return null;
+    }
+}
+
+
+
+document.getElementById('rzp-button1').onclick = async function (e) {
+    e.preventDefault();
+
+    let order_id = await createOrder();
+    if (!order_id) {
+        alert("Error: Order ID not generated!");
+        return;
+    }
+
+    var options = {
+        "key": "rzp_test_AewwYpDdKjarAy",  
+        "amount": 50000,  
+        "currency": "INR",
+        "name": "College Name",
+        "description": "Fee Payment",
+        "order_id": order_id,  
+        "handler": function (response) {
+            alert("Payment Successful! Payment ID: " + response.razorpay_payment_id);
+        },
+        "theme": { "color": "#3399cc" }
+    };
+
+    var rzp1 = new Razorpay(options);
+    rzp1.open();
+};
+</script>
+
+
+</body>
+</html>
